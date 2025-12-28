@@ -132,6 +132,36 @@ sir-network-epidemic-simulation/
 - Patient Zero işaretleme
 - Farklı merkeziyet ölçülerinin karşılaştırılması
 
+## Deployment
+
+### Streamlit Cloud (Önerilen)
+
+Uygulamayı ücretsiz olarak Streamlit Cloud'a deploy edebilirsiniz:
+
+1. **GitHub'a yükleyin:**
+```bash
+git init
+git add .
+git commit -m "Initial commit"
+git remote add origin https://github.com/KULLANICI_ADI/REPO_ADI.git
+git push -u origin main
+```
+
+2. **Streamlit Cloud'a kayıt olun:**
+   - [share.streamlit.io](https://share.streamlit.io) adresine gidin
+   - GitHub hesabınızla giriş yapın
+
+3. **Deploy edin:**
+   - "New app" > Repository seçin > Branch: `main` > Main file: `gui.py` > Deploy!
+
+**Detaylı deployment rehberi için:** `DEPLOY_README.md` dosyasına bakın.
+
+### Diğer Platformlar
+
+- **Railway**: `railway.json` dosyası ile otomatik deploy
+- **Render**: `render.yaml` dosyası ile otomatik deploy
+- **Docker**: `Dockerfile` ile herhangi bir platforma deploy
+
 ## Notlar
 
 - Büyük ağlarda (200+ node) 3D animasyon yavaş olabilir, bu yüzden devre dışı bırakılmıştır
