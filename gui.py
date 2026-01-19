@@ -12,6 +12,7 @@ import pandas as pd
 import numpy as np
 import time
 import io
+from datetime import datetime
 
 from src.data_loading import create_sample_network, load_edge_list, get_largest_component
 from src.centrality import calculate_all_centralities, get_top_k_nodes_by_measure
@@ -1229,6 +1230,97 @@ def main():
                     min_idx = np.argmin(plotting_data['peak_times'])
                     st.info(f"**En Hızlı Yayılım:**\n\n{plotting_data['scenarios'][min_idx].title()}")
                     st.metric("Peak Zamanı", f"{plotting_data['peak_times'][min_idx]:.1f}")
+                
+                st.divider()
+                
+                # JSON Export Bölümü
+                st.subheader("📥 Deney Sonuçlarını İndir (Akademik Kullanım)")
+                st.markdown("""
+                <div style="background-color: #f0f2f6; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #1f77b4;">
+                    <strong>Akademik Makale İçin Detaylı JSON Export</strong><br>
+                    Bu JSON dosyası tüm simülasyon sonuçlarını, istatistiksel metrikleri ve karşılaştırma verilerini içerir.
+                    Makale yazımında deney sonuçları olarak kullanabilirsiniz.
+                </div>
+                """, unsafe_allow_html=True)
+                
+                col_json1, col_json2 = st.columns([2, 1])
+                
+                with col_json1:
+                    include_runs = st.checkbox(
+                        "Bireysel run sonuçlarını dahil et",
+                        value=True,
+                        help="Her simülasyon run'unun detaylı sonuçlarını dahil eder. Daha büyük dosya boyutu ama daha detaylı analiz imkanı."
+                    )
+                    
+                    st.info("""
+                    **JSON İçeriği:**
+                    - Deney metadata'sı (tarih, parametreler)
+                    - Ağ topolojisi bilgileri
+                    - Merkeziyet ölçüleri özeti
+                    - Her senaryo için:
+                      * Başlangıç enfekte node'ları
+                      * İstatistiksel metrikler (ortalama, std, min, max, median, quartiles, 95% CI)
+                      * Ortalama zaman serisi
+                      * Epidemik metrikler (R₀, infection rate, recovery rate)
+                      * Bireysel run sonuçları (opsiyonel)
+                    - Senaryo karşılaştırma metrikleri
+                    - İyileştirme yüzdeleri (random'a göre)
+                    """)
+                
+                with col_json2:
+                    if st.button("JSON Oluştur ve İndir", type="primary", use_container_width=True):
+                        try:
+                            json_data = runner.export_to_json(include_individual_runs=include_runs)
+                            
+                            # Dosya adı oluştur
+                            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                            filename = f"sir_experiment_results_{timestamp}.json"
+                            
+                            # Download butonu
+                            st.download_button(
+                                label="📥 JSON Dosyasını İndir",
+                                data=json_data,
+                                file_name=filename,
+                                mime="application/json",
+                                use_container_width=True
+                            )
+                            
+                            # Dosya boyutu bilgisi
+                            file_size_kb = len(json_data.encode('utf-8')) / 1024
+                            st.success(f"✅ JSON hazır! Dosya boyutu: {file_size_kb:.2f} KB")
+                            
+                            # Önizleme
+                            with st.expander("📄 JSON Önizleme (İlk 1000 karakter)"):
+                                st.code(json_data[:1000] + "...", language="json")
+                            
+                        except Exception as e:
+                            st.error(f"JSON oluşturma hatası: {str(e)}")
+                            import traceback
+                            with st.expander("Detaylı Hata"):
+                                st.code(traceback.format_exc())
+                
+                st.divider()
+                
+                # İstatistiksel Analiz Özeti
+                st.subheader("📊 İstatistiksel Analiz Özeti")
+                
+                # ANOVA benzeri karşılaştırma tablosu
+                comparison_df = pd.DataFrame({
+                    'Scenario': plotting_data['scenarios'],
+                    'Final Outbreak Size': [f"{m:.2f} ± {s:.2f}" for m, s in 
+                                           zip(plotting_data['outbreak_sizes'], plotting_data['outbreak_stds'])],
+                    'Peak Infected': [f"{m:.2f} ± {s:.2f}" for m, s in 
+                                     zip(plotting_data['peak_infecteds'], plotting_data['peak_infected_stds'])],
+                    'Peak Time': [f"{m:.2f} ± {s:.2f}" for m, s in 
+                                zip(plotting_data['peak_times'], plotting_data['peak_time_stds'])]
+                })
+                
+                st.dataframe(comparison_df, use_container_width=True, hide_index=True)
+                
+                st.caption("""
+                **Not:** Bu tablo makale için kullanılabilir. JSON dosyasında daha detaylı istatistiksel bilgiler 
+                (quartiles, güven aralıkları, bireysel run sonuçları) bulunmaktadır.
+                """)
                 
             else:
                 st.warning("Henüz simülasyon çalıştırılmadı. Simülasyon sekmesine gidin.")
